@@ -1,5 +1,8 @@
-import streamlit as st import yfinance as yf import pandas as pd import datetime import numpy as np
-
+import streamlit as st
+import yfinance as yf
+import pandas as pd
+import datetime
+import numpy as np
 st.set_page_config(page_title="AI Stock Portfolio Tracker", layout="wide") st.title("📈 AI Stock Portfolio Tracker")
 
 Session state to store stock portfolio
