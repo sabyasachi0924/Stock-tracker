@@ -6,7 +6,7 @@ import numpy as np
 st.set_page_config(page_title="AI Stock Portfolio Tracker", layout="wide") 
 st.title("📈 AI Stock Portfolio Tracker")
 
-Session state to store stock portfolio
+#Session state to store stock portfolio
 
 if "portfolio" not in st.session_state: st.session_state.portfolio = []
 
