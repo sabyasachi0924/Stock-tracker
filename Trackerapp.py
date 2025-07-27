@@ -80,5 +80,5 @@ else: st.info("Add stocks above to begin tracking your portfolio.")
 
 Footer
 
-st.markdown("---") st.caption("Built with ❤️ using Streamlit and Yahoo Finance API")
-
+st.markdown("---")
+st.caption("Built with ❤️ using Streamlit and Yahoo Finance API")
