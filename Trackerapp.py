@@ -11,16 +11,29 @@ st.title("📈 AI Stock Portfolio Tracker")
 if "portfolio" not in st.session_state: st.session_state.portfolio = []
 
 #Input form
-
-with st.form("add_stock_form"): st.subheader("➕ Add a Stock") col1, col2 = st.columns(2) with col1: ticker = st.text_input("Stock Ticker (e.g., AAPL)").upper() with col2: quantity = st.number_input("Quantity", min_value=1, step=1) add = st.form_submit_button("Add to Portfolio")
-
+with st.form("add_stock_form"):
+    st.subheader("➕ Add a Stock")
+    col1, col2 = st.columns(2)
+    with col1:
+        ticker = st.text_input("Stock Ticker (e.g., AAPL)").upper()
+    with col2:
+        quantity = st.number_input("Quantity", min_value=1, step=1)
+    add = st.form_submit_button("Add to Portfolio")
 if add and ticker and quantity:
     st.session_state.portfolio.append({"ticker": ticker, "quantity": quantity})
 
 #Display portfolio if not empty
-
-if st.session_state.portfolio: st.subheader("📊 Portfolio Summary") tickers = [item["ticker"] for item in st.session_state.portfolio] data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
-
+if st.session_state.portfolio:
+    st.subheader("📊 Portfolio Summary")
+    tickers = [item["ticker"] for item in st.session_state.portfolio]
+    data = yf.download(
+        tickers,
+        period="7d",
+        interval="1d",
+        group_by="ticker",
+        threads=True,
+        progress=False
+    )
 rows = []
 insights = []
 total_value = 0
