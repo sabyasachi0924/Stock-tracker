@@ -33,6 +33,13 @@ tab1, tab2 = st.tabs(["📊 My Portfolio", "📈 Market Movers"])
 with tab1: # Sidebar - Add a stock with st.sidebar: st.header("➕ Add Stock to Portfolio") ticker_input = st.text_input("Stock Ticker (e.g., RELIANCE for NSE, SBIN.BO for BSE)").upper() quantity_input = st.number_input("Quantity", min_value=1, step=1)
 
 # Auto append .NS for NSE if no suffix is given
+    # Input field
+ticker_input = st.text_input("Enter Stock Ticker (e.g., RELIANCE, TCS, HDFCBANK)").upper()
+
+# Only process if ticker is valid and not an index like NIFTY.BE
+if ticker_input and "." not in ticker_input:
+    # Do something with the ticker
+    st.write(f"Looking up data for {ticker_input}")
     if ticker_input and "." not in ticker_input:
         ticker_input += ".NS"
 
