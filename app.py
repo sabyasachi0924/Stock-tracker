@@ -78,7 +78,7 @@ if sector_counts.max() > len(df) * 0.6:
 
 else: st.info("Add stocks above to begin tracking your portfolio.")
 
-Footer
+#Footer
 
 st.markdown("---")
 st.caption("Built with ❤️ using Streamlit and Yahoo Finance API")
