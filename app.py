@@ -1,71 +1,146 @@
-import os 
-import requests 
-import zipfile 
-import io 
-import streamlit as st 
+import streamlit as st
 import yfinance as yf 
 import pandas as pd 
+import numpy as np 
+import os
 from datetime import datetime
+import requests
 
-st.set_page_config(page_title="🇮🇳 Bullwalk: Indian Stock Tracker", layout="wide") 
-st.title("🐂 Bullwalk - NSE/BSE Stock Tracker with AI Buy/Sell Signals")
+# App config
+st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") 
+st.title("🐂 Bullwalk - Indian Stock Portfolio Tracker with AI Insights")
 
-@st.cache_data(show_spinner=True) 
-def fetch_nse_tickers():
-    url = "https://www1.nseindia.com/content/equities/EQUITY_L.csv" 
-    headers = {"User-Agent": "Mozilla/5.0"} 
-    response = requests.get(url, headers=headers) 
-    if response.ok: 
+# Initialize session state
+if "portfolio" not in st.session_state:
+    st.session_state.portfolio = []
+
+# Telegram Alert Function
+def send_telegram_alert(message):
+    telegram_token = st.secrets.get("TELEGRAM_TOKEN")
+    telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID")
+    if telegram_token and telegram_chat_id:
+        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+        payload = {"chat_id": telegram_chat_id, "text": message}
+        try:
+            requests.post(url, data=payload)
+        except Exception as e:
+            st.error(f"Telegram error: {e}")
+
+# Download stock list CSVs if not available
+if not os.path.exists("EQUITY_L.csv"):
     with open("EQUITY_L.csv", "wb") as f:
-        f.write(response.content) 
-        df = pd.read_csv("EQUITY_L.csv") r
-        eturn df["SYMBOL"].dropna().astype(str).tolist() 
-else: st.error("❌ Failed to fetch NSE stock list.") 
-return []
+        f.write(requests.get("https://www1.nseindia.com/content/equities/EQUITY_L.csv", headers={"User-Agent":"Mozilla/5.0"}).content)
 
-@st.cache_data(show_spinner=True) 
-def fetch_bse_tickers():
-    today = datetime.now().strftime("%d%m%y") 
-    zip_url = f"https://www.bseindia.com/download/BhavCopy/Equity/EQ{today}_CSV.ZIP" 
-    headers = {"User-Agent": "Mozilla/5.0"} 
-    response = requests.get(zip_url, headers=headers) 
-    if response.ok: 
-        z = zipfile.ZipFile(io.BytesIO(response.content)) 
-        csv_filename = [name for name in z.namelist() if name.endswith('.CSV')][0] 
-        z.extract(csv_filename) 
-        df = pd.read_csv(csv_filename)
-        return df["SC_CODE"].dropna().astype(str).tolist() 
-    else: st.error("❌ Failed to fetch BSE Bhavcopy.") 
-        return []
+# Tabs
+tab1, tab2 = st.tabs(["📊 My Portfolio", "📈 Market Movers"])
 
-#Load tickers
+# ========== Tab 1: Portfolio ==========
+with tab1:
+    st.subheader("➕ Add Stock to Portfolio")
 
-nse_tickers = fetch_nse_tickers()
-bse_tickers = fetch_bse_tickers()
+    with st.form("add_stock_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            ticker_input = st.text_input("Stock Ticker (e.g., RELIANCE)").upper()
+        with col2:
+            quantity_input = st.number_input("Quantity", min_value=1, step=1)
 
-all_indian_tickers = [f"{symbol}.NS" for symbol in nse_tickers] + [f"{code}.BO" for code in bse_tickers]
+        submitted = st.form_submit_button("Add to Portfolio")
 
-#User input
+        if submitted and ticker_input and quantity_input:
+            if "." not in ticker_input:
+                ticker_input += ".NS"  # Default to NSE
+            st.session_state.portfolio.append({
+                "ticker": ticker_input,
+                "quantity": quantity_input
+            })
+            st.success(f"{ticker_input} added!")
 
-st.sidebar.header("Search a Stock") 
-user_ticker = st.sidebar.text_input("Enter Stock Ticker (e.g., RELIANCE, 500325)").upper()
+    if st.session_state.portfolio:
+        st.subheader("📊 Portfolio Summary")
+        tickers = [item["ticker"] for item in st.session_state.portfolio]
+        data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
 
-if user_ticker: 
-    full_ticker = user_ticker + (".NS" if user_ticker in nse_tickers else ".BO") 
-data = yf.download(full_ticker, period="1mo", interval="1d", progress=False)
+        total_value = 0
+        table = []
 
-if not data.empty:
-    st.subheader(f"📊 Analysis for {full_ticker}")
-    data["9EMA"] = data["Close"].ewm(span=9, adjust=False).mean()
-    data["Signal"] = ["BUY" if c > e else "SELL" for c, e in zip(data["Close"], data["9EMA"])]
+        for stock in st.session_state.portfolio:
+            ticker = stock["ticker"]
+            quantity = stock["quantity"]
+            try:
+                price_series = data[ticker]["Close"]
+                latest_price = price_series.iloc[-1]
+                prev_price = price_series.iloc[-2]
+                change_pct = ((latest_price - prev_price) / prev_price) * 100
+                value = quantity * latest_price
+                total_value += value
 
-    st.line_chart(data[["Close", "9EMA"]])
-    st.write(data.tail())
+                # AI Buy/Sell signal (based on EMA)
+                ema9 = price_series.ewm(span=9, adjust=False).mean()
+                signal = ""
+                if latest_price > ema9.iloc[-1] and prev_price < ema9.iloc[-2]:
+                    signal = "🟢 Buy Signal"
+                    send_telegram_alert(f"BUY signal for {ticker}")
+                elif latest_price < ema9.iloc[-1] and prev_price > ema9.iloc[-2]:
+                    signal = "🔴 Sell Signal"
+                    send_telegram_alert(f"SELL signal for {ticker}")
 
-    latest_signal = data["Signal"].iloc[-1]
-    st.success(f"🔔 AI Signal: **{latest_signal}**")
-else:
-    st.warning("No data found for the ticker.")
+                table.append({
+                    "Ticker": ticker,
+                    "Qty": quantity,
+                    "Price": f"₹{latest_price:.2f}",
+                    "Change %": f"{change_pct:.2f}%",
+                    "Value": f"₹{value:,.2f}",
+                    "AI Signal": signal
+                })
+            except Exception as e:
+                table.append({"Ticker": ticker, "Qty": quantity, "Error": str(e)})
 
-st.sidebar.markdown("---") 
-st.sidebar.caption("Made with ❤️ for Indian investors")
+        df = pd.DataFrame(table)
+        st.dataframe(df)
+
+        st.markdown(f"### 💼 Total Portfolio Value: ₹{total_value:,.2f}")
+        st.markdown("---")
+
+        # AI summary
+        top_mover = max(table, key=lambda x: abs(float(x.get("Change %", "0%")[:-1])) if "Change %" in x else 0)
+        st.info(f"Most volatile: **{top_mover['Ticker']}**, moved **{top_mover['Change %']}**")
+
+    else:
+        st.warning("Your portfolio is empty. Please add stocks using the form above.")
+
+# ========== Tab 2: Market Movers ==========
+with tab2:
+    st.subheader("📈 Volume Shockers & Price Gainers (Top NSE Stocks)")
+
+    sample_nse_200 = [
+        "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
+        "ITC.NS", "SBIN.NS", "LT.NS", "AXISBANK.NS", "ASIANPAINT.NS"
+    ]
+
+    mover_data = yf.download(sample_nse_200, period="5d", interval="1d", group_by="ticker", threads=True, progress=False)
+
+    movers = []
+    for ticker in sample_nse_200:
+        try:
+            close = mover_data[ticker]["Close"]
+            volume = mover_data[ticker]["Volume"]
+            price_change = (close.iloc[-1] - close.iloc[-2]) / close.iloc[-2] * 100
+            vol_change = (volume.iloc[-1] - volume.iloc[-2]) / volume.iloc[-2] * 100
+            if vol_change > 100 or price_change > 5:
+                movers.append({
+                    "Ticker": ticker,
+                    "Price % Change": f"{price_change:.2f}%",
+                    "Volume % Change": f"{vol_change:.2f}%"
+                })
+        except:
+            pass
+
+    if movers:
+        st.success("🚀 Top Movers Detected:")
+        st.dataframe(pd.DataFrame(movers))
+    else:
+        st.info("No major movements today.")
+
+st.markdown("---")
+st.caption("Built with ❤️ using Streamlit, Yahoo Finance API, and Telegram integration.")
