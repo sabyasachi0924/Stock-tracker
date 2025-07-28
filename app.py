@@ -2,7 +2,8 @@ import streamlit as st
 import yfinance as yf 
 import pandas as pd 
 import numpy as np 
-from datetime import datetime import requests
+from datetime import datetime 
+import requests
 
 st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") st.title("📈 Indian Stock Portfolio Tracker with AI Insights")
 
