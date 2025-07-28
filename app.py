@@ -1,84 +1,113 @@
-import streamlit as st
-import yfinance as yf
-import pandas as pd
-import datetime
-import numpy as np
-st.set_page_config(page_title="AI Stock Portfolio Tracker", layout="wide") 
-st.title("📈 AI Stock Portfolio Tracker")
+import streamlit as st import yfinance as yf import pandas as pd import numpy as np from datetime import datetime import requests
 
-#Session state to store stock portfolio
+st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") st.title("📈 Indian Stock Portfolio Tracker with AI Insights")
+
+Initialize portfolio state
 
 if "portfolio" not in st.session_state: st.session_state.portfolio = []
 
-#Input form
-with st.form("add_stock_form"):
-    st.subheader("➕ Add a Stock")
-    col1, col2 = st.columns(2)
-    with col1:
-        ticker = st.text_input("Stock Ticker (e.g., AAPL)").upper()
-    with col2:
-        quantity = st.number_input("Quantity", min_value=1, step=1)
-    add = st.form_submit_button("Add to Portfolio")
-if add and ticker and quantity:
-    st.session_state.portfolio.append({"ticker": ticker, "quantity": quantity})
+Function to send Telegram alert
 
-#Display portfolio if not empty
+def send_telegram_alert(message): telegram_token = st.secrets.get("TELEGRAM_TOKEN") telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID") if telegram_token and telegram_chat_id: url = f"https://api.telegram.org/bot{telegram_token}/sendMessage" payload = {"chat_id": telegram_chat_id, "text": message} try: requests.post(url, data=payload) except Exception as e: st.error(f"Telegram error: {e}")
+
+Tabs for portfolio and market movers
+
+tab1, tab2 = st.tabs(["📊 My Portfolio", "📈 Market Movers"])
+
+with tab1: # Sidebar - Add a stock with st.sidebar: st.header("➕ Add Stock to Portfolio") ticker_input = st.text_input("Stock Ticker (e.g., RELIANCE for NSE, SBIN.BO for BSE)").upper() quantity_input = st.number_input("Quantity", min_value=1, step=1)
+
+# Auto append .NS for NSE if no suffix is given
+    if ticker_input and "." not in ticker_input:
+        ticker_input += ".NS"
+
+    if st.button("Add Stock"):
+        st.session_state.portfolio.append({
+            "ticker": ticker_input,
+            "quantity": quantity_input
+        })
+
+# Display current portfolio
 if st.session_state.portfolio:
     st.subheader("📊 Portfolio Summary")
     tickers = [item["ticker"] for item in st.session_state.portfolio]
-    data = yf.download(
-        tickers,
-        period="7d",
-        interval="1d",
-        group_by="ticker",
-        threads=True,
-        progress=False
-    )
-rows = []
-insights = []
-total_value = 0
+    data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
 
-for item in st.session_state.portfolio:
-    ticker = item["ticker"]
-    qty = item["quantity"]
+    total_value = 0
+    table = []
 
+    for stock in st.session_state.portfolio:
+        ticker = stock["ticker"]
+        quantity = stock["quantity"]
+        try:
+            latest_price = data[ticker]["Close"].iloc[-1]
+            change_pct = ((data[ticker]["Close"].iloc[-1] - data[ticker]["Close"].iloc[-2]) / data[ticker]["Close"].iloc[-2]) * 100
+            value = quantity * latest_price
+            total_value += value
+            table.append({
+                "Ticker": ticker,
+                "Qty": quantity,
+                "Price": f"₹{latest_price:.2f}",
+                "Change %": f"{change_pct:.2f}%",
+                "Value": f"₹{value:,.2f}"
+            })
+        except Exception as e:
+            table.append({"Ticker": ticker, "Qty": quantity, "Error": str(e)})
+
+    df = pd.DataFrame(table)
+    st.dataframe(df)
+
+    st.markdown(f"### 💼 Total Portfolio Value: ₹{total_value:,.2f}")
+
+    # AI Insight (mocked example)
+    st.markdown("---")
+    st.subheader("🤖 AI Insights")
+    top_mover = max(table, key=lambda x: abs(float(x.get("Change %", "0%")[:-1])) if "Change %" in x else 0)
+    st.info(f"Your most volatile stock today is **{top_mover['Ticker']}**, moving **{top_mover['Change %']}**")
+
+else:
+    st.warning("Your portfolio is empty. Please add stocks from the sidebar.")
+
+with tab2: st.subheader("📈 Volume Shockers & Price Gainers (Top NSE Stocks)")
+
+# NSE 200 sample list
+sample_nse_200 = ["RELIANCE.NS", "HDFCBANK.NS", "INFY.NS", "TCS.NS", "ITC.NS", "LT.NS", "SBIN.NS", "ICICIBANK.NS", "KOTAKBANK.NS", "AXISBANK.NS",
+                  "WIPRO.NS", "HINDUNILVR.NS", "BAJFINANCE.NS", "BHARTIARTL.NS", "ADANIENT.NS", "ASIANPAINT.NS", "MARUTI.NS", "SUNPHARMA.NS"]
+
+data = yf.download(sample_nse_200, period="5d", interval="1d", group_by="ticker", threads=True, progress=False)
+
+movers = []
+alert_msgs = []
+
+for ticker in sample_nse_200:
     try:
-        info = yf.Ticker(ticker).info
-        price = info.get("regularMarketPrice")
-        prev_close = info.get("previousClose")
-        sector = info.get("sector", "N/A")
+        vol_today = data[ticker]["Volume"].iloc[-1]
+        vol_avg = data[ticker]["Volume"].mean()
+        close_today = data[ticker]["Close"].iloc[-1]
+        close_prev = data[ticker]["Close"].iloc[-2]
+        price_change = ((close_today - close_prev) / close_prev) * 100
 
-        value = price * qty
-        gain_loss = (price - prev_close) * qty
-        change_pct = ((price - prev_close) / prev_close) * 100 if prev_close else 0
-        total_value += value
+        if vol_today > 2 * vol_avg or price_change > 2:
+            movers.append({
+                "Ticker": ticker,
+                "Volume": vol_today,
+                "Avg Volume": int(vol_avg),
+                "Price": f"₹{close_today:.2f}",
+                "Change %": f"{price_change:.2f}%"
+            })
+            alert_msgs.append(f"{ticker}: Price {price_change:.2f}%, Volume {vol_today:,}")
+    except:
+        continue
 
-        # Trend detection
-        hist = data[ticker]["Close"] if len(tickers) > 1 else data["Close"]
-        trend = np.polyfit(range(len(hist)), hist.values, 1)[0]  # slope
-        trend_msg = "📈 Uptrend" if trend > 0 else "📉 Downtrend"
+if movers:
+    df_movers = pd.DataFrame(movers)
+    st.dataframe(df_movers)
 
-        # Risk scoring
-        volatility = np.std(hist.pct_change().dropna())
-        risk_score = "High" if volatility > 0.03 else "Medium" if volatility > 0.015 else "Low"
+    # Send Telegram Alert
+    st.success("Sending alert to Telegram...")
+    alert_text = "📢 Volume/Price Alerts:\n" + "\n".join(alert_msgs)
+    send_telegram_alert(alert_text)
+else:
+    st.info("No major volume or price shocks detected today.")
 
-        # Store row
-        rows.append([ticker, sector, qty, f"${price:.2f}", f"${value:.2f}", f"{change_pct:.2f}%", trend_msg, risk_score])
-    except Exception as e:
-        st.error(f"Error loading data for {ticker}: {e}")
-
-df = pd.DataFrame(rows, columns=["Ticker", "Sector", "Quantity", "Price", "Value", "% Change", "Trend", "Risk"])
-st.dataframe(df, use_container_width=True)
-st.success(f"Total Portfolio Value: ${total_value:,.2f}")
-
-# Diversification Check
-sector_counts = df["Sector"].value_counts()
-if sector_counts.max() > len(df) * 0.6:
-    st.warning("⚠️ Your portfolio may be overexposed to one sector. Consider diversifying.")
-
-else: st.info("Add stocks above to begin tracking your portfolio.")
-
-#Footer
-
-st.markdown("---")
-st.caption("Built with ❤️ using Streamlit and Yahoo Finance API")
+st.markdown("---") 
+st.caption("Built with ❤️ using Streamlit, Yahoo Finance & Telegram")
