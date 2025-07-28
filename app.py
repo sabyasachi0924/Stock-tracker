@@ -26,7 +26,7 @@ def send_telegram_alert(message):
         except Exception as e:
             st.error(f"Telegram error: {e}")
 
-Tabs for portfolio and market movers
+#Tabs for portfolio and market movers
 
 tab1, tab2 = st.tabs(["📊 My Portfolio", "📈 Market Movers"])
 
