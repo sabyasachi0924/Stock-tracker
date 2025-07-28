@@ -14,7 +14,17 @@ if "portfolio" not in st.session_state: st.session_state.portfolio = []
 
 #Function to send Telegram alert
 
-def send_telegram_alert(message): telegram_token = st.secrets.get("TELEGRAM_TOKEN") telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID") if telegram_token and telegram_chat_id: url = f"https://api.telegram.org/bot{telegram_token}/sendMessage" payload = {"chat_id": telegram_chat_id, "text": message} try: requests.post(url, data=payload) except Exception as e: st.error(f"Telegram error: {e}")
+def send_telegram_alert(message):
+    telegram_token = st.secrets.get("TELEGRAM_TOKEN")
+    telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID")
+
+    if telegram_token and telegram_chat_id:
+        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+        payload = {"chat_id": telegram_chat_id, "text": message}
+        try:
+            requests.post(url, data=payload)
+        except Exception as e:
+            st.error(f"Telegram error: {e}")
 
 Tabs for portfolio and market movers
 
