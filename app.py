@@ -5,7 +5,8 @@ import numpy as np
 from datetime import datetime 
 import requests
 
-st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") st.title("📈 Indian Stock Portfolio Tracker with AI Insights")
+st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") 
+st.title("📈 Indian Stock Portfolio Tracker with AI Insights")
 
 #Initialize portfolio state
 
