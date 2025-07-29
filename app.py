@@ -11,11 +11,17 @@ import matplotlib.pyplot as plt
 from nsepython import nse_eq, nse_top_gainers, nse_top_losers 
 from bsedata.bse import BSE
 
-st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") st.title(":chart_with_upwards_trend: Indian Stock Portfolio Tracker with AI Insights")
+st.set_page_config(page_title="🇮🇳 Indian Stock Portfolio Tracker", layout="wide") 
+st.title(":chart_with_upwards_trend: Indian Stock Portfolio Tracker with AI Insights")
 
-#Initialize portfolio if "portfolio" not in st.session_state: st.session_state.portfolio = []
+#Initialize portfolio 
+if "portfolio" not in st.session_state: 
+    st.session_state.portfolio = []
 
-#Telegram Alert def send_telegram_alert(message): telegram_token = st.secrets.get("TELEGRAM_TOKEN") telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID")
+#Telegram Alert 
+def send_telegram_alert(message): 
+    telegram_token = st.secrets.get("TELEGRAM_TOKEN") 
+    telegram_chat_id = st.secrets.get("TELEGRAM_CHAT_ID")
 
 if telegram_token and telegram_chat_id:
     url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
@@ -41,7 +47,8 @@ def train_model(df):
     df["Target"] = np.where(df["Close"].shift(-1) > df["Close"], 1, 0) 
     features = df[["EMA9", "EMA21", "RSI", "MACD", "Signal"]] 
     target = df["Target"] 
-    model = RandomForestClassifier(n_estimators=100, random_state=42) model.fit(features, target) 
+    model = RandomForestClassifier(n_estimators=100, random_state=42) 
+    model.fit(features, target) 
     return model
 
 #Tabs 
@@ -67,7 +74,8 @@ with tab1:
     })
 
 if st.session_state.portfolio: 
-    st.subheader("Portfolio Summary") tickers = [item["ticker"] for item in st.session_state.portfolio]
+    st.subheader("Portfolio Summary") 
+    tickers = [item["ticker"] for item in st.session_state.portfolio]
 
 import yfinance as yf
 data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
