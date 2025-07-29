@@ -26,7 +26,8 @@ def send_telegram_alert(message):
     if telegram_token and telegram_chat_id: 
         url = f"https://api.telegram.org/bot{telegram_token}/sendMessage" 
         payload = {"chat_id": telegram_chat_id, "text": message} 
-        try: requests.post(url, data=payload) 
+        try: 
+            requests.post(url, data=payload) 
             except Exception as e: 
                 st.error(f"Telegram error: {e}")
 
