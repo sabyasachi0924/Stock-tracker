@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np 
 from datetime import datetime 
 import requests 
-import os from sklearn.ensemble 
-import RandomForestClassifier from ta.momentum 
-import RSIIndicator from ta.trend 
-import MACD, EMAIndicator 
+import os 
+from sklearn.ensemble import RandomForestClassifier 
+from ta.momentum import RSIIndicator 
+from ta.trend import MACD, EMAIndicator 
 import matplotlib.pyplot as plt 
 from nsepython import nse_eq, nse_top_gainers, nse_top_losers 
 from bsedata.bse import BSE
