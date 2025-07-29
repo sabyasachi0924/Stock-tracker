@@ -64,13 +64,14 @@ with st.form("add_stock_form"):
     st.subheader("Add Stock to Portfolio") 
     col1, col2 = st.columns(2) 
     
-    with col1: ticker_input = st.text_input("Stock Ticker (e.g., RELIANCE)").upper() 
+    with col1: 
+        ticker_input = st.text_input("Stock Ticker (e.g., RELIANCE)").upper() 
         
     with col2: 
-            quantity_input = st.number_input("Quantity", min_value=1, step=1) 
-            submit = st.form_submit_button("Add")
+        quantity_input = st.number_input("Quantity", min_value=1, step=1) 
+        submit = st.form_submit_button("Add")
             if submit and ticker_input and quantity_input:
-                if "." not in ticker_input: 
+             if "." not in ticker_input: 
                     ticker_input += ".NS"
                     st.session_state.portfolio.append({ 
                         "ticker": ticker_input, 
