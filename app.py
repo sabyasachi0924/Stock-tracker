@@ -80,13 +80,13 @@ if st.session_state.portfolio:
     st.subheader("Portfolio Summary") 
     tickers = [item["ticker"] for item in st.session_state.portfolio]
 
-import yfinance as yf
-data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
+    import yfinance as yf
+           data = yf.download(tickers, period="7d", interval="1d", group_by="ticker", threads=True, progress=False)
 
-total_value = 0
-table = []
+           total_value = 0
+           table = []
 
-for stock in st.session_state.portfolio:
+    for stock in st.session_state.portfolio:
     ticker = stock["ticker"]
     quantity = stock["quantity"]
     try:
