@@ -126,9 +126,11 @@ df = pd.DataFrame(table)
 st.dataframe(df)
 st.markdown(f"### Total Portfolio Value: ₹{total_value:,.2f}")
 
-else: st.warning("Your portfolio is empty. Please add stocks.")
+else: 
+    st.warning("Your portfolio is empty. Please add stocks.")
 
-with tab2: st.subheader("📈 Market Movers")
+with tab2: 
+    st.subheader("📈 Market Movers")
 
 try:
     # NSE Gainers/Losers
