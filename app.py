@@ -59,8 +59,8 @@ def train_model(df):
 tab1, tab2 = st.tabs(["My Portfolio", "Market Movers"])
 
 with tab1: 
-
-with st.form("add_stock_form"):
+    
+    with st.form("add_stock_form"):
     st.subheader("Add Stock to Portfolio") 
     col1, col2 = st.columns(2) 
     
