@@ -125,7 +125,6 @@ for stock in st.session_state.portfolio:
 df = pd.DataFrame(table)
 st.dataframe(df)
 st.markdown(f"### Total Portfolio Value: ₹{total_value:,.2f}")
-
 else: 
     st.warning("Your portfolio is empty. Please add stocks.")
 
