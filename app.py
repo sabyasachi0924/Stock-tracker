@@ -69,12 +69,12 @@ with tab1:
                submit = st.form_submit_button("Add")
 
     if submit and ticker_input and quantity_input:
-    if "." not in ticker_input: 
-        ticker_input += ".NS"
-    st.session_state.portfolio.append({ 
-        "ticker": ticker_input, 
-        "quantity": quantity_input 
-    })
+       if "." not in ticker_input: 
+          ticker_input += ".NS"
+       st.session_state.portfolio.append({ 
+          "ticker": ticker_input, 
+          "quantity": quantity_input 
+       })
 
 if st.session_state.portfolio: 
     st.subheader("Portfolio Summary") 
