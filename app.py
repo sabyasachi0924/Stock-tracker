@@ -37,8 +37,10 @@ def generate_features(df):
     df = df.copy() 
     df["EMA9"] = EMAIndicator(df["Close"], window=9).ema_indicator() 
     df["EMA21"] = EMAIndicator(df["Close"], window=21).ema_indicator() 
-    df["RSI"] = RSIIndicator(df["Close"]).rsi() macd = MACD(df["Close"]) 
-    df["MACD"] = macd.macd() df["Signal"] = macd.macd_signal() 
+    df["RSI"] = RSIIndicator(df["Close"]).rsi() 
+    macd = MACD(df["Close"]) 
+    df["MACD"] = macd.macd() 
+    df["Signal"] = macd.macd_signal() 
     df.dropna(inplace=True) 
     return df
 
